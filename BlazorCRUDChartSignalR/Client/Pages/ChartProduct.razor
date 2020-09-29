@@ -11,12 +11,12 @@
 <div class="row">
     <div class="col-md-8 p-4">
         <RadzenChart>
-            <RadzenColumnSeries Data="@prodList" CategoryProperty="ProdName" Title="Product Views"
+            <RadzenColumnSeries Data="@prodList" CategoryProperty="ProdName" Title="Product Stock"
                                 LineType="LineType.Dashed" ValueProperty="ProdStockAmount" Fill="green" />
             <RadzenColumnOptions Radius="5" />
             <RadzenValueAxis>
                 <RadzenGridLines Visible="true" />
-                <RadzenAxisTitle Text="Product views" />
+                <RadzenAxisTitle Text="Product Stock" />
             </RadzenValueAxis>
         </RadzenChart>
     </div>
