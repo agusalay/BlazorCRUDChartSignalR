@@ -1,0 +1,60 @@
+﻿@page "/chartproducts"
+@using Microsoft.AspNetCore.SignalR.Client
+@using BlazorCRUDChartSignalR.Shared
+
+@using Radzen
+@using Radzen.Blazor
+
+@inject HttpClient Http
+@inject NavigationManager NavigatorManager
+
+<div class="row">
+    <div class="col-md-8 p-4">
+        <RadzenChart>
+            <RadzenColumnSeries Data="@prodList" CategoryProperty="ProdName" Title="Product Views"
+                                LineType="LineType.Dashed" ValueProperty="ProdStockAmount" Fill="green" />
+            <RadzenColumnOptions Radius="5" />
+            <RadzenValueAxis>
+                <RadzenGridLines Visible="true" />
+                <RadzenAxisTitle Text="Product views" />
+            </RadzenValueAxis>
+        </RadzenChart>
+    </div>
+</div>
+
+@code {
+    Product[] prodList;
+
+    private HubConnection hubConnection;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        hubConnection = new HubConnectionBuilder().WithUrl(NavigatorManager.ToAbsoluteUri("/ProductHub")).Build();
+
+
+        hubConnection.On("ReceiveMessage", () =>
+        {
+            CallLoaData();
+        });
+
+        await hubConnection.StartAsync();
+        await LoadData();
+    }
+
+    private void CallLoaData()
+    {
+        Task.Run(async () =>
+        {
+            await LoadData();
+        });
+    }
+
+    protected async Task LoadData()
+    {
+        prodList = await Http.GetJsonAsync<Product[]>("api/Products");
+        StateHasChanged();
+    }
+
+    public void Dispose() => _ = hubConnection.DisposeAsync();
+}

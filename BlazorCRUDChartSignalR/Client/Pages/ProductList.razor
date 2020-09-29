@@ -1,0 +1,81 @@
+﻿@page "/products"
+@using Microsoft.AspNetCore.SignalR.Client
+@using BlazorCRUDChartSignalR.Shared
+
+@inject HttpClient Http
+@inject NavigationManager NavigatorManager
+
+<h2>Product Details</h2>
+<hr />
+<p>
+    <a href="/addproduct" >Create New Product</a>
+</p>
+
+@if(prodList == null)
+{
+    <p>Loading...</p>
+}else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Name</th>
+                <th>Stock Amount</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var prod in prodList)
+            {
+                <tr>
+                    <td>@prod.Id</td>
+                    <td>@prod.ProdName</td>
+                    <td>@prod.ProdStockAmount</td>
+                    <td>
+                        <a href="/editproduct/@prod.Id">Edit</a>
+                        <a href="/deleteproduct/@prod.Id">Delete</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    Product[] prodList;
+
+    private HubConnection hubConnection;
+
+    protected override async Task OnInitializedAsync()
+    {
+        hubConnection = new HubConnectionBuilder().WithUrl(NavigatorManager.ToAbsoluteUri("/ProductHub")).Build();
+
+
+        hubConnection.On("ReceiveMessage", () =>
+        {
+            CallLoaData();
+        });
+
+        await hubConnection.StartAsync();
+        await LoadData();
+    }
+
+    private void CallLoaData()
+    {
+        Task.Run(async () =>
+        {
+            await LoadData();
+        });
+    }
+
+    protected async Task LoadData()
+    {
+        prodList = await Http.GetJsonAsync<Product[]>("api/Products");
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        _ = hubConnection.DisposeAsync();
+    }
+}

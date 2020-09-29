@@ -1,0 +1,64 @@
+﻿@page "/deleteproduct/{id}"
+@using Microsoft.AspNetCore.SignalR.Client
+@using BlazorCRUDChartSignalR.Shared
+
+@inject HttpClient Http
+@inject NavigationManager NavigatorManager
+
+<h2>Delete Product</h2>
+<hr />
+<p>Are you sure to delete this product?</p>
+<br />
+<div class="col-md-4">
+    <table>
+        <tr>
+            <td>Name</td>
+            <td>@prod.ProdName</td>
+        </tr>
+        <tr>
+            <td>Stock</td>
+            <td>@prod.ProdStockAmount</td>
+        </tr>
+    </table>
+    <div class="form-group">
+        <input type="button" class="btn btn-danger" value="Update" @onclick="Delete" />
+        <input type="button" class="btn btn-primary" value="Cancel" @onclick="Cancel" />
+    </div>
+
+</div>
+@code {
+    Product prod = new Product();
+
+    private HubConnection hubConnection;
+
+    [Parameter]
+    public string id { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        prod = await Http.GetJsonAsync<Product>($"api/Products/{id}");
+
+
+        hubConnection = new HubConnectionBuilder().WithUrl(NavigatorManager.ToAbsoluteUri("/ProductHub")).Build();
+
+
+        await hubConnection.StartAsync();
+    }
+
+    public bool IsConnected => hubConnection.State == HubConnectionState.Connected;
+
+    public async Task Delete()
+    {
+        await Http.DeleteAsync($"api/Products/{id}");
+        if (IsConnected) await SendMessage();
+
+        NavigatorManager.NavigateTo("products");
+    }
+
+    Task SendMessage() => hubConnection.SendAsync("SendMessage");
+
+    void Cancel()
+    {
+        NavigatorManager.NavigateTo("products");
+    }
+}

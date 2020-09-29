@@ -1,0 +1,62 @@
+﻿@page "/addproduct"
+@using Microsoft.AspNetCore.SignalR.Client
+@using BlazorCRUDChartSignalR.Shared
+
+@inject HttpClient Http
+@inject NavigationManager NavigatorManager
+
+
+<h2>Create Product</h2>
+
+<form>
+    <div class="row">
+        <div class="col-md-8">
+            <div class="form-group">
+                <label for="ProdName" class="control-label">Name</label>
+                <input form="ProdName" class="form-control" @bind="@prod.ProdName" />
+            </div>
+            <div class="form-group">
+                <label for="ProdStockAmount" class="control-label">Stock Amount</label>
+                <input form="ProdStockAmount" class="form-control" @bind="@prod.ProdStockAmount" />
+            </div>
+        </div>
+    </div>
+    <div class="form-group">
+        <input type="button" class="btn btn-success" value="Save" @onclick="CreateProduct" />
+        <input type="button" class="btn btn-danger" value="Cancel" @onclick="Cancel" />
+    </div>
+</form>
+
+@code {
+    Product prod = new Product();
+
+    private HubConnection hubConnection;
+
+    protected override async Task OnInitializedAsync()
+    {
+        hubConnection = new HubConnectionBuilder().WithUrl(NavigatorManager.ToAbsoluteUri("/ProductHub")).Build();
+
+
+        await hubConnection.StartAsync();
+    }
+
+    public bool IsConnected => hubConnection.State == HubConnectionState.Connected;
+
+
+    public async Task CreateProduct()
+    {
+        await  Http.PostJsonAsync("api/Products", prod);
+        if (IsConnected) await SendMessage();
+        NavigatorManager.NavigateTo("products");
+    }
+
+    Task SendMessage() => hubConnection.SendAsync("SendMessage");
+
+    void Cancel()
+    {
+        NavigatorManager.NavigateTo("products");
+    }
+
+    public void Dispose() => _ = hubConnection.DisposeAsync();
+
+}
